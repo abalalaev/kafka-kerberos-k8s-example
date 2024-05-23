@@ -1,0 +1,33 @@
+image:
+  registry: docker.io
+  repository: bitnami/kafka
+  tag: 3.6.1-debian-12-r12
+
+sasl:
+  enabledMechanisms: PLAIN
+
+controller:
+  extraVolumes:
+    - name: kafka-krb5-keytab
+      secret:
+        secretName: kafka-krb5-keytab
+    - name: kafka-krb5-config
+      configMap:
+        name: kafka-krb5-config
+  extraVolumeMounts:
+    - name: kafka-krb5-keytab
+      mountPath: /bitnami/kafka/config/krb5.keytab
+      subPath: krb5.keytab
+    - name: kafka-krb5-config
+      mountPath: /bitnami/kafka/config/krb5.conf
+      subPath: krb5.conf
+  extraEnvVars:
+    - name: KAFKA_OPTS
+      value: "-Djava.security.krb5.conf=/bitnami/kafka/config/krb5.conf"
+
+extraConfig: |
+  authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer
+  super.users=User:controller_user;User:inter_broker_user;User:kafkaAdmin
+  listener.name.client.sasl.enabled.mechanisms=PLAIN,GSSAPI
+  listener.name.client.gssapi.sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required useKeyTab=true storeKey=true keyTab="/bitnami/kafka/config/krb5.keytab" principal="kafka/advertised-address-placeholder@EXAMPLE.COM";
+  sasl.kerberos.service.name=kafka
